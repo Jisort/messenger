@@ -9,13 +9,19 @@ import {
     invalidateData
 } from './actions/actions';
 import {formDataToPayload, getUrlData, extractResponseError} from "./functions/componentActions";
-import {Grid, TextField, Button, FormControl, Typography} from "@material-ui/core";
+import {
+    Grid, TextField, Button,
+    FormControl, Typography, Fab
+} from "@material-ui/core";
 import AppLoadingIndicator from "./components/AppLoadingIndicator";
 import ComponentLoadingIndicator from "./components/ComponentLoadingIndicator";
 import FormFeedbackMessage from "./components/FormFeedbackMessage";
 import FormActivityIndicator from "./components/FormActivityIndicator";
 import $ from "jquery";
 import {postAPIRequest} from "./functions/APIRequests";
+import {Payment} from '@material-ui/icons';
+import FormModal from "./components/FormModal";
+import FormTopUp from "./units/FormTopUp";
 
 class Home extends Component {
     constructor(props) {
@@ -25,7 +31,8 @@ class Home extends Component {
             activity: false,
             message: false,
             message_variant: 'info',
-            message_text: null
+            message_text: null,
+            top_up_dialogue_open: false
         };
     }
 
@@ -80,6 +87,18 @@ class Home extends Component {
             }
         )
     }
+
+    handleCloseDialogue = (form) => {
+        this.setState({
+            [form]: false
+        })
+    };
+
+    handleOpenDialogue = (form) => {
+        this.setState({
+            [form]: true
+        })
+    };
 
     render() {
         const {organization_data} = this.props;
@@ -146,12 +165,28 @@ class Home extends Component {
                     </form>
                     <Grid container spacing={3}>
                         <Grid item xs={12}>
-                            <Typography  variant="body1" display="block" gutterBottom>
+                            <Typography variant="body1" display="block" gutterBottom
+                                        style={{fontWeight: 'bold'}}>
                                 balance: {organization['sms_units']}
+                                <Fab variant="extended" color="default" size="small"
+                                     onClick={() => this.handleOpenDialogue('top_up_dialogue_open')}>
+                                    <Payment color="primary"/>
+                                    top-up
+                                </Fab>
                             </Typography>
                         </Grid>
                     </Grid>
                 </Grid>
+                <FormModal
+                    handleClickOpen={() => this.handleOpenDialogue('top_up_dialogue_open')}
+                    handleClose={() => this.handleCloseDialogue('top_up_dialogue_open')}
+                    open={this.state.top_up_dialogue_open}
+                    title="Top-up"
+                >
+                    <FormTopUp
+                        handleClose={() => this.handleCloseDialogue('top_up_dialogue_open')}
+                    />
+                </FormModal>
             </Grid>
         );
     }
