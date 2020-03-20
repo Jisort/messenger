@@ -19,9 +19,9 @@ import Badge from '@material-ui/core/Badge';
 import {
     Settings as SettingsIcon,
     AccountCircle as AccountCircleIcon,
-    ViewList as ViewListIcon,
+    Contacts as ContactsIcon,
     ExitToApp as ExitToAppIcon,
-    Home as HomeIcon,
+    Message as MessageIcon,
     Assessment as AssessmentIcon
 } from '@material-ui/icons';
 import {Tooltip} from "@material-ui/core";
@@ -104,17 +104,17 @@ export default function MiniDrawer(props) {
 
     const upper_menu_items = [
         {
-            label: 'Home',
-            icon: <HomeIcon/>,
-            tooltipTitle: 'home',
+            label: 'Send message',
+            icon: <MessageIcon/>,
+            tooltipTitle: 'Send message',
             route: '/',
             badge: '',
             onClick: props['handleLinkClick']
         }, {
-            label: 'Loans',
-            icon: <ViewListIcon/>,
-            tooltipTitle: 'view loans',
-            route: '/viewLoans',
+            label: 'Address book',
+            icon: <ContactsIcon/>,
+            tooltipTitle: 'Address book',
+            route: '/',
             badge: '',
             onClick: props['handleLinkClick']
         }, {
@@ -122,7 +122,6 @@ export default function MiniDrawer(props) {
             icon: <AssessmentIcon/>,
             tooltipTitle: 'view reports',
             route: '/customReports',
-            badge: <Badge badgeContent="new" color="error"/>,
             onClick: props['handleLinkClick']
         }
     ];
@@ -143,14 +142,6 @@ export default function MiniDrawer(props) {
             route: '/',
             badge: '',
             onClick: props['handleLogout']
-        },
-        {
-            label: 'Settings',
-            icon: <SettingsIcon/>,
-            tooltipTitle: 'view settings',
-            route: '/settings',
-            badge: '',
-            onClick: props['handleLinkClick']
         }
     ];
 
