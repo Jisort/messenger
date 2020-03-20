@@ -15,6 +15,7 @@ import {
 import FormFeedbackMessage from "../components/FormFeedbackMessage";
 import AutocompleteSelect from "../components/AutocompleteSelect";
 import DatePicker from "../components/DatePicker";
+import DateTimePicker from "../components/DateTimePicker";
 import ComponentLoadingIndicator from "../components/ComponentLoadingIndicator";
 import FormActivityIndicator from "../components/FormActivityIndicator";
 import {getAPIRequest} from "../functions/APIRequests";
@@ -81,12 +82,16 @@ class CustomReports extends Component {
             if (filter['filter_value'] === "" && this.state[filter_name]) {
                 if (filter['field_type'] === 'DateField') {
                     data[filter_name] = moment(this.state[filter_name]).format('YYYY-MM-DD');
+                } else if (filter['field_type'] === 'DateTimeField') {
+                    data[filter_name] = moment(this.state[filter_name]).format();
                 } else {
                     data[filter_name] = this.state[filter_name];
                 }
                 if (filter['filter_type'] === "range" && this.state[filter_name2]) {
                     if (filter['field_type'] === 'DateField') {
                         data[filter_name2] = moment(this.state[filter_name2]).format('YYYY-MM-DD');
+                    } else if (filter['field_type'] === 'DateTimeField') {
+                        data[filter_name2] = moment(this.state[filter_name2]).format();
                     } else {
                         data[filter_name2] = this.state[filter_name2];
                     }
@@ -130,14 +135,26 @@ class CustomReports extends Component {
         let date_range_filters = '';
         let select_filters = '';
         let date_lte_gte_filters = '';
+        let date_time_range_filters = '';
+        let date_time_lte_gte_filters = '';
+        let exclude = '';
         if (this.state.selected_report) {
             let selected_report = this.state.selected_report;
             let report_filters = selected_report['filterfield_set'];
             let date_range_filter = report_filters.filter(function (el) {
-                return el['field_type'] === 'DateField' && el['filter_type'] === 'range';
+                return el['field_type'] === 'DateField' &&
+                    el['filter_type'] === 'range';
             });
             let date_lte_gte_filter = report_filters.filter(function (el) {
                 return el['field_type'] === 'DateField' &&
+                    ['lt', 'lte', 'gt', 'gte'].indexOf(el['filter_type']) !== -1;
+            });
+            let date_time_range_filter = report_filters.filter(function (el) {
+                return el['field_type'] === 'DateTimeField' &&
+                    el['filter_type'] === 'range';
+            });
+            let date_time_lte_gte_filter = report_filters.filter(function (el) {
+                return el['field_type'] === 'DateTimeField' &&
                     ['lt', 'lte', 'gt', 'gte'].indexOf(el['filter_type']) !== -1;
             });
             let select_filter = report_filters.filter(function (el) {
@@ -146,7 +163,6 @@ class CustomReports extends Component {
                     el['select_list'].length > 0;
             });
             date_lte_gte_filters = date_lte_gte_filter.map((date_lte_gte_filter, key) => {
-                let exclude = '';
                 if (date_lte_gte_filter.exclude) {
                     exclude = 'exclude ';
                 }
@@ -174,7 +190,7 @@ class CustomReports extends Component {
                     />
                 </Grid>
             });
-            date_range_filters = date_range_filter.map((date_range_filter) => {
+            date_range_filters = date_range_filter.map((date_range_filter, key) => {
                 let date_from_name = date_range_filter.field + '_filter_value';
                 let date_to_name = date_range_filter.field + '_filter_value2';
                 let exclude = '';
@@ -184,7 +200,7 @@ class CustomReports extends Component {
                 let from_label_name = `${exclude}${date_range_filter['field_verbose']} from`;
                 let to_label_name = `${exclude}${date_range_filter['field_verbose']} to`;
                 return [
-                    <Grid item xs={6}>
+                    <Grid item xs={6} key={`${key}.1`}>
                         <DatePicker
                             label={from_label_name}
                             value={this.state[date_from_name] || null}
@@ -197,7 +213,7 @@ class CustomReports extends Component {
                             fullWidth={true}
                         />
                     </Grid>,
-                    <Grid item xs={6}>
+                    <Grid item xs={6} key={`${key}.2`}>
                         <DatePicker
                             label={to_label_name}
                             value={this.state[date_to_name] || null}
@@ -211,6 +227,71 @@ class CustomReports extends Component {
                         />
                     </Grid>
                 ]
+            });
+            date_time_range_filters = date_time_range_filter.map((date_time_range_filter, key) => {
+                let date_time_from_name = date_time_range_filter.field + '_filter_value';
+                let date_time_to_name = date_time_range_filter.field + '_filter_value2';
+                if (date_time_range_filter.exclude) {
+                    exclude = 'exclude ';
+                }
+                let from_label_name = `${exclude}${date_time_range_filter['field_verbose']} from`;
+                let to_label_name = `${exclude}${date_time_range_filter['field_verbose']} to`;
+                return [
+                    <Grid item xs={6} key={`${key}.1`}>
+                        <DateTimePicker
+                            label={from_label_name}
+                            value={this.state[date_time_from_name] || null}
+                            onChange={date => {
+                                this.setState({
+                                    [date_time_from_name]: date
+                                });
+                            }}
+                            format="YYYY-MM-DD HH:MM"
+                            fullWidth={true}
+                        />
+                    </Grid>,
+                    <Grid item xs={6} key={`${key}.2`}>
+                        <DateTimePicker
+                            label={to_label_name}
+                            value={this.state[date_time_to_name] || null}
+                            onChange={date => {
+                                this.setState({
+                                    [date_time_to_name]: date
+                                });
+                            }}
+                            format="YYYY-MM-DD HH:MM"
+                            fullWidth={true}
+                        />
+                    </Grid>
+                ]
+            });
+            date_time_lte_gte_filters = date_time_lte_gte_filter.map((date_time_lte_gte_filter, key) => {
+                if (date_time_lte_gte_filter.exclude) {
+                    exclude = 'exclude ';
+                }
+                let from_to = 'to';
+                if (date_time_lte_gte_filter['filter_type'] === 'lte') {
+                    from_to = 'to(including)';
+                } else if (date_time_lte_gte_filter['filter_type'] === 'gt') {
+                    from_to = 'from';
+                } else if (date_time_lte_gte_filter['filter_type'] === 'gte') {
+                    from_to = 'from(including)';
+                }
+                let date_time_lte_gte_name = date_time_lte_gte_filter.field + '_filter_value';
+                let label_name = `${exclude}${date_time_lte_gte_filter['field_verbose']} ${from_to}`;
+                return <Grid item xs={6} key={key}>
+                    <DateTimePicker
+                        label={label_name}
+                        value={this.state[date_time_lte_gte_name] || null}
+                        onChange={date => {
+                            this.setState({
+                                [date_time_lte_gte_name]: date
+                            });
+                        }}
+                        format="YYYY-MM-DD HH:MM"
+                        fullWidth={true}
+                    />
+                </Grid>
             });
             select_filters = select_filter.map((select_filter) => {
                 let options = select_filter['select_list'].map(function (option) {
@@ -310,7 +391,8 @@ class CustomReports extends Component {
                     <Grid item xs={12}>
                         <Box m={2}>
                             {message}
-                            <form id="custom-reports-form" onSubmit={(e) => this.handleGenerateReport(e)}>
+                            <form id="custom-reports-form"
+                                  onSubmit={(e) => this.handleGenerateReport(e)}>
                                 <Grid container spacing={3}>
                                     <Grid item xs={12}>
                                         <FormControl fullWidth>
@@ -324,6 +406,8 @@ class CustomReports extends Component {
                                     </Grid>
                                     {date_lte_gte_filters}
                                     {date_range_filters}
+                                    {date_time_lte_gte_filters}
+                                    {date_time_range_filters}
                                     {select_filters}
                                     <Grid item xs={12}>
                                         <FormControl fullWidth>

@@ -106,14 +106,14 @@ class Home extends Component {
             <Grid container>
                 <Grid item xs={12}>
                     <Grid container spacing={3}>
-                        <Grid item xs={6}>
+                        <Grid item xs={12}>
                             {message}
                         </Grid>
                     </Grid>
                     <form onSubmit={(e) => this.handleSubmitSendMessage(e)}
                           id="send-message-form">
                         <Grid container spacing={3}>
-                            <Grid item xs={6}>
+                            <Grid item xs={12}>
                                 <TextField
                                     fullWidth
                                     label="Recipients"
@@ -124,7 +124,7 @@ class Home extends Component {
                             </Grid>
                         </Grid>
                         <Grid container spacing={3}>
-                            <Grid item xs={6}>
+                            <Grid item xs={12}>
                                 <TextField
                                     fullWidth
                                     label="Message"
@@ -137,7 +137,7 @@ class Home extends Component {
                             </Grid>
                         </Grid>
                         <Grid container spacing={3}>
-                            <Grid item xs={6}>
+                            <Grid item xs={12}>
                                 <FormControl fullWidth>
                                     {send_message_button}
                                 </FormControl>
@@ -145,7 +145,7 @@ class Home extends Component {
                         </Grid>
                     </form>
                     <Grid container spacing={3}>
-                        <Grid item xs={6}>
+                        <Grid item xs={12}>
                             <Typography  variant="body1" display="block" gutterBottom>
                                 balance: {organization['sms_units']}
                             </Typography>
