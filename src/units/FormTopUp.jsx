@@ -44,10 +44,10 @@ class FormTopUp extends Component {
                     activity: false
                 });
                 const {sessionVariables, dispatch} = this.props;
-                let organization_url = sessionVariables['loan_ledgers_url'] || '';
+                let organization_url = sessionVariables['organization_url'] || '';
                 dispatch(invalidateData(organization_url));
                 dispatch(fetchDataIfNeeded(organization_url));
-                $("form#add-payment")[0].reset();
+                $("form#top-up-form")[0].reset();
             },
             (results) => {
                 let alert_message = extractResponseError(results);
