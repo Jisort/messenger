@@ -115,7 +115,7 @@ class FormSignUp extends Component {
         payload['organization_slogan'] = '';
         payload['organization_type'] = 'other';
         payload['how_you_knew_about_us'] = 'google';
-        payload['system_use'] = 'loanbook';
+        payload['system_use'] = 'messenger';
         payload['location'] = '';
         payload['jisort_apps'] = true;
         postAPIRequest(
