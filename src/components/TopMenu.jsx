@@ -114,7 +114,7 @@ export default function MiniDrawer(props) {
             label: 'Address book',
             icon: <ContactsIcon/>,
             tooltipTitle: 'Address book',
-            route: '/',
+            route: '/addressBook',
             badge: '',
             onClick: props['handleLinkClick']
         }, {
