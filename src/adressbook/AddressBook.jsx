@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React, {Component, Fragment, useState} from "react";
 import MaterialTable from "material-table";
 import {serverBaseUrl} from "../functions/baseUrls";
 import {fetchDataIfNeeded, invalidateData, setSessionVariable} from "../actions/actions";
@@ -9,6 +9,8 @@ import {extractResponseError, getUrlData} from "../functions/componentActions";
 import {postAPIRequest} from "../functions/APIRequests";
 import FormFeedbackMessage from "../components/FormFeedbackMessage";
 import AutocompleteSelect from "../components/AutocompleteSelect";
+import Select from "@appgeist/react-select-material-ui";
+import {TextField} from "@material-ui/core";
 
 class AddressBook extends Component {
     constructor(props) {
@@ -34,6 +36,17 @@ class AddressBook extends Component {
 
     handleCreateContact = (contact_data) => {
         let send_message_url = serverBaseUrl() + '/messenger/contacts/';
+        let selected_address_book = this.state.selected_address_book;
+        let {first_name, middle_name, last_name, phone_number} = this.state;
+        contact_data['first_name'] = first_name;
+        contact_data['middle_name'] = middle_name;
+        contact_data['last_name'] = last_name;
+        contact_data['phone_number'] = phone_number;
+        if (selected_address_book['__isNew__']) {
+            contact_data['book_name'] = selected_address_book['value'];
+        } else {
+            contact_data['book'] = selected_address_book['value'];
+        }
         postAPIRequest(
             send_message_url,
             () => {
@@ -70,11 +83,11 @@ class AddressBook extends Component {
 
     handleAddressBookChange  = (book_object) => {
         this.setState({
-            selected_address_book: book_object['value'],
+            selected_address_book: book_object,
         });
     };
 
-    editAddressBookComponent = () => {
+    editAddressBookComponent = (field) => {
         const {address_books_data} = this.props;
         let address_books = address_books_data['items'];
         let address_books_list = address_books.map(function (book) {
@@ -84,12 +97,27 @@ class AddressBook extends Component {
                 optionDisplay: book['book_name'],
             }
         });
-        return <AutocompleteSelect
-            label="Address book"
-            optionLabel="label"
-            data={address_books_list}
-            onChange={(value) => this.handleAddressBookChange(value)}
-        />
+        return <Fragment>
+            <Select
+                id="value"
+                label="Address book"
+                placeholder="Select address book"
+                options={address_books_list}
+                value={this.state.selected_address_book}
+                onChange={(value) => this.handleAddressBookChange(value)}
+                isClearable
+                isCreatable
+            />
+        </Fragment>
+    }
+
+    nameFieldComponent = (field) => {
+        let column_def = field.columnDef;
+        return <TextField type="text" label={column_def.title} name={column_def.field}
+                          variant="outlined"
+                          onChange={event => this.setState({
+                              [column_def.field]: event.target.value
+                          })}/>
     }
 
     render() {
@@ -110,15 +138,19 @@ class AddressBook extends Component {
         let contacts_columns = [{
             field: 'first_name',
             title: 'First name',
+            editComponent: this.nameFieldComponent
         }, {
             field: 'middle_name',
-            title: 'Middle name'
+            title: 'Middle name',
+            editComponent: this.nameFieldComponent
         }, {
             field: 'last_name',
             title: 'Last name',
+            editComponent: this.nameFieldComponent
         }, {
             field: 'phone_number',
             title: 'Phone number',
+            editComponent: this.nameFieldComponent
         }, {
             field: 'address_book',
             title: 'Address book',
