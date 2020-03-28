@@ -14,7 +14,7 @@ const useStyles = makeStyles({
     },
 });
 
-export default function CountrySelect(props) {
+export default function AutoCompleteSelect(props) {
     const classes = useStyles();
 
     return (
