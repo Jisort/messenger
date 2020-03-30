@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React, {Component, Fragment} from "react";
 import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
@@ -22,6 +22,7 @@ import {postAPIRequest} from "./functions/APIRequests";
 import {Payment} from '@material-ui/icons';
 import FormModal from "./components/FormModal";
 import FormTopUp from "./units/FormTopUp";
+import Select from "@appgeist/react-select-material-ui";
 
 class Home extends Component {
     constructor(props) {
@@ -32,12 +33,15 @@ class Home extends Component {
             message: false,
             message_variant: 'info',
             message_text: null,
-            top_up_dialogue_open: false
+            top_up_dialogue_open: false,
+            recipients_array: []
         };
     }
 
     componentDidMount() {
         this.fetchUrlData('organization_url', '/registration/organizations/');
+        this.fetchUrlData('contacts_url', '/messenger/contacts/');
+        this.fetchUrlData('address_books_url', '/messenger/address_books/');
     }
 
     fetchUrlData = (var_name, url) => {
@@ -54,6 +58,12 @@ class Home extends Component {
         })
         let formData = new FormData($('form#send-message-form')[0]);
         let payload = {};
+        let recipients_array = this.state.recipients_array;
+        let recipients = [];
+        recipients_array.forEach(function (recipient) {
+            recipients.push(recipient['value']);
+        });
+        payload['recipients'] = recipients.join(',');
         payload = formDataToPayload(formData, payload);
         let send_message_url = serverBaseUrl() + '/messenger/outbox/';
         postAPIRequest(
@@ -100,8 +110,52 @@ class Home extends Component {
         })
     };
 
+    handleRecipientsChange  = (recipients_array) => {
+        let previous_recipients = this.state.recipients_array || [];
+        let unique_recipients_array = null;
+        if (recipients_array) {
+            if (previous_recipients.length < recipients_array.length) {
+                let last_recipient_obj = recipients_array[recipients_array.length - 1];
+                if (last_recipient_obj['label'].endsWith('(address book)')) {
+                    const {contacts_data} = this.props;
+                    let contacts = contacts_data['items'];
+                    let address_book_contacts = contacts.filter(function (contact) {
+                        return contact['address_book_list'].indexOf(last_recipient_obj['value']) !== -1
+                    });
+                    recipients_array.pop();
+                    address_book_contacts.forEach(function (contact) {
+                        recipients_array.push({
+                            value: contact['phone_number'],
+                            label: contact['phone_number'] + ' ' + contact['full_name'],
+                        })
+                    });
+                }
+            }
+            // remove duplicates
+            unique_recipients_array = [...new Map(recipients_array.map(item => [item['value'], item])).values()];
+        }
+        this.setState({
+            recipients_array: unique_recipients_array,
+        });
+    };
+
     render() {
-        const {organization_data} = this.props;
+        const {organization_data, address_books_data, contacts_data} = this.props;
+        let contacts = contacts_data['items'];
+        let address_books = address_books_data['items'];
+        let contacts_list = contacts.map(function (contact) {
+            return {
+                value: contact['phone_number'],
+                label: contact['phone_number'] + ' ' + contact['full_name'],
+            }
+        });
+        let address_books_list  = address_books.map(function (book) {
+            return {
+                value: book['id'],
+                label: book['book_name'] + '(address book)',
+            }
+        });
+        let recipients_list = contacts_list.concat(address_books_list);
         let organization = organization_data['items'][0] || {};
         if (this.state.loading) {
             return <AppLoadingIndicator/>;
@@ -133,13 +187,18 @@ class Home extends Component {
                           id="send-message-form">
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Recipients"
-                                    name="recipients"
-                                    variant="outlined"
-                                    required={true}
-                                />
+                                <Fragment>
+                                    <Select
+                                        id="value"
+                                        label="Recipients"
+                                        options={recipients_list}
+                                        value={this.state.recipients_array}
+                                        onChange={(value) => this.handleRecipientsChange(value)}
+                                        isClearable
+                                        isCreatable
+                                        isMulti
+                                    />
+                                </Fragment>
                             </Grid>
                         </Grid>
                         <Grid container spacing={3}>
@@ -195,7 +254,9 @@ class Home extends Component {
 Home.propTypes = {
     sessionVariables: PropTypes.object.isRequired,
     dispatch: PropTypes.func.isRequired,
-    organization_data: PropTypes.object.isRequired
+    organization_data: PropTypes.object.isRequired,
+    contacts_data: PropTypes.object.isRequired,
+    address_books_data: PropTypes.object.isRequired
 };
 
 function mapStateToProps(state) {
@@ -206,10 +267,14 @@ function mapStateToProps(state) {
 
     const {sessionVariables, dataByUrl} = state;
     const organization_data = retrieveUrlData('organization_url', dataByUrl);
+    const contacts_data = retrieveUrlData('contacts_url', dataByUrl);
+    const address_books_data = retrieveUrlData('address_books_url', dataByUrl);
 
     return {
         sessionVariables,
-        organization_data
+        organization_data,
+        contacts_data,
+        address_books_data
     }
 }
 
