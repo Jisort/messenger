@@ -1,4 +1,4 @@
-import React, {Component, Fragment, useState} from "react";
+import React, {Component, Fragment} from "react";
 import MaterialTable from "material-table";
 import {serverBaseUrl} from "../functions/baseUrls";
 import {fetchDataIfNeeded, invalidateData, setSessionVariable} from "../actions/actions";
@@ -8,7 +8,6 @@ import PropTypes from 'prop-types';
 import {extractResponseError, getUrlData} from "../functions/componentActions";
 import {postAPIRequest} from "../functions/APIRequests";
 import FormFeedbackMessage from "../components/FormFeedbackMessage";
-import AutocompleteSelect from "../components/AutocompleteSelect";
 import Select from "@appgeist/react-select-material-ui";
 import {TextField} from "@material-ui/core";
 
@@ -36,17 +35,23 @@ class AddressBook extends Component {
 
     handleCreateContact = (contact_data) => {
         let send_message_url = serverBaseUrl() + '/messenger/contacts/';
-        let selected_address_book = this.state.selected_address_book;
+        let selected_address_books = this.state.selected_address_book;
         let {first_name, middle_name, last_name, phone_number} = this.state;
         contact_data['first_name'] = first_name;
         contact_data['middle_name'] = middle_name;
         contact_data['last_name'] = last_name;
         contact_data['phone_number'] = phone_number;
-        if (selected_address_book['__isNew__']) {
-            contact_data['book_name'] = selected_address_book['value'];
-        } else {
-            contact_data['book'] = selected_address_book['value'];
-        }
+        let book = [];
+        let book_name = [];
+        selected_address_books.forEach(function (selected_address_book) {
+            if (selected_address_book['__isNew__']) {
+                book_name.push(selected_address_book['value']);
+            } else {
+                book.push(selected_address_book['value']);
+            }
+        });
+        contact_data['book_name'] = book_name.join(',');
+        contact_data['book'] = book.join(',');
         postAPIRequest(
             send_message_url,
             () => {
@@ -72,6 +77,10 @@ class AddressBook extends Component {
                     message_variant: 'error',
                     activity: false
                 });
+                const {sessionVariables, dispatch} = this.props;
+                let address_books_url = sessionVariables['address_books_url'] || '';
+                dispatch(invalidateData(address_books_url));
+                dispatch(fetchDataIfNeeded(address_books_url));
             },
             contact_data,
             {
@@ -101,12 +110,12 @@ class AddressBook extends Component {
             <Select
                 id="value"
                 label="Address book"
-                placeholder="Select address book"
                 options={address_books_list}
                 value={this.state.selected_address_book}
                 onChange={(value) => this.handleAddressBookChange(value)}
                 isClearable
                 isCreatable
+                isMulti
             />
         </Fragment>
     }
@@ -155,6 +164,10 @@ class AddressBook extends Component {
             field: 'address_book',
             title: 'Address book',
             editComponent: this.editAddressBookComponent
+        }, {
+            field: 'carrier_region',
+            title: 'Carrier',
+            editable: 'never'
         }];
         return (
             <div>
