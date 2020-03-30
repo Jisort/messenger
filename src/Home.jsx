@@ -155,7 +155,7 @@ class Home extends Component {
                 label: book['book_name'] + '(address book)',
             }
         });
-        let recipients_list = contacts_list.concat(address_books_list);
+        let recipients_list = address_books_list.concat(contacts_list);
         let organization = organization_data['items'][0] || {};
         if (this.state.loading) {
             return <AppLoadingIndicator/>;
