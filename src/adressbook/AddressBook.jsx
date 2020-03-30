@@ -103,7 +103,6 @@ class AddressBook extends Component {
             return {
                 value: book['id'],
                 label: book['book_name'],
-                optionDisplay: book['book_name'],
             }
         });
         return <Fragment>
