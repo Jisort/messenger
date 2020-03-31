@@ -36,7 +36,8 @@ class Home extends Component {
             message_text: null,
             top_up_dialogue_open: false,
             recipients_array: [],
-            contacts_match: []
+            contacts_match: [],
+            component_loading: false
         };
     }
 
@@ -150,18 +151,47 @@ class Home extends Component {
             if (previous_recipients.length < recipients_array.length) {
                 let last_recipient_obj = recipients_array[recipients_array.length - 1];
                 if (last_recipient_obj['label'].endsWith('(address book)')) {
-                    const {contacts_data} = this.props;
-                    let contacts = contacts_data['items'];
-                    let address_book_contacts = contacts.filter(function (contact) {
-                        return contact['address_book_list'].indexOf(last_recipient_obj['value']) !== -1
+                    this.setState({
+                        component_loading: true
                     });
-                    recipients_array.pop();
-                    address_book_contacts.forEach(function (contact) {
-                        recipients_array.push({
-                            value: contact['phone_number'],
-                            label: contact['phone_number'] + ' ' + contact['full_name'],
-                        })
-                    });
+                    let book_contacts_url = serverBaseUrl() +
+                        `/messenger/contacts/?book=${last_recipient_obj['value']}`;
+                    getAPIRequest(
+                        book_contacts_url,
+                        (results) => {
+                            let address_book_contacts = results.filter(function (contact) {
+                                return contact['address_book_list'].indexOf(last_recipient_obj['value']) !== -1
+                            });
+                            recipients_array.pop();
+                            address_book_contacts.forEach(function (contact) {
+                                recipients_array.push({
+                                    value: contact['phone_number'],
+                                    label: contact['phone_number'] + ' ' + contact['full_name'],
+                                })
+                            });
+                            unique_recipients_array = [
+                                ...new Map(recipients_array.map(item => [item['value'], item])).values()
+                            ];
+                            this.setState({
+                                recipients_array: unique_recipients_array,
+                                component_loading: false
+                            });
+                        },
+                        (results) => {
+                            let alert_message = extractResponseError(results);
+                            this.setState({
+                                message: true,
+                                message_text: alert_message,
+                                message_variant: 'error',
+                                activity: false,
+                                component_loading: false
+                            });
+                        },
+                        {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.token
+                        }
+                    )
                 }
             }
             // remove duplicates
@@ -191,7 +221,9 @@ class Home extends Component {
         let organization = organization_data['items'][0] || {};
         if (this.state.loading) {
             return <AppLoadingIndicator/>;
-        } else if (organization_data['isFetching'] || address_books_data['isFetching']) {
+        } else if (organization_data['isFetching'] ||
+            address_books_data['isFetching'] ||
+            this.state.component_loading) {
             return <ComponentLoadingIndicator/>;
         }
         let send_message_button = <Button variant="contained" color="primary" type="submit">
