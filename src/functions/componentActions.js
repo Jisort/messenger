@@ -115,9 +115,22 @@ module.exports = {
         return moment.utc(utc_time).local().format(format);
     },
     countries_overwrite: function (key) {
-        let countries_overwrite =  {
+        let countries_overwrite = {
             'TW': {name: 'Taiwan, China'}
         };
         return countries_overwrite[key];
+    },
+
+    addressBookToPayload: function (selected_address_books) {
+        let book = [];
+        let book_name = [];
+        selected_address_books.forEach(function (selected_address_book) {
+            if (selected_address_book['__isNew__']) {
+                book_name.push(selected_address_book['value']);
+            } else {
+                book.push(selected_address_book['value']);
+            }
+        });
+        return [book, book_name]
     }
 };

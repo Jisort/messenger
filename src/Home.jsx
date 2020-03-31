@@ -34,7 +34,8 @@ class Home extends Component {
             message_variant: 'info',
             message_text: null,
             top_up_dialogue_open: false,
-            recipients_array: []
+            recipients_array: [],
+            contacts_match: []
         };
     }
 
@@ -110,7 +111,37 @@ class Home extends Component {
         })
     };
 
-    handleRecipientsChange  = (recipients_array) => {
+    handleRecipientsSearch = (contact_search) => {
+        console.log(contact_search);
+        if (contact_search) {
+            const {contacts_data} = this.props;
+            let contacts = contacts_data['items'];
+            let contacts_match = [];
+            contacts.forEach((contact) => {
+                let search = contact_search.toLowerCase();
+                let values = Object.values(contact);
+                let flag = false
+                values.forEach((val) => {
+                    if (val) {
+                        val = val.toString();
+                        if (val.toLowerCase().indexOf(search) > -1) {
+                            flag = true;
+                            return;
+                        }
+                    }
+                });
+                if (flag) {
+                    contacts_match.push({
+                        value: contact['phone_number'],
+                        label: contact['phone_number'] + ' ' + contact['full_name'],
+                    });
+                }
+            });
+            return contacts_match;
+        }
+    }
+
+    handleRecipientsChange = (recipients_array) => {
         let previous_recipients = this.state.recipients_array || [];
         let unique_recipients_array = null;
         if (recipients_array) {
@@ -140,26 +171,27 @@ class Home extends Component {
     };
 
     render() {
+        const promiseOptions = inputValue =>
+            new Promise(resolve => {
+                setTimeout(() => {
+                    resolve(this.handleRecipientsSearch(inputValue));
+                }, 1000);
+            });
         const {organization_data, address_books_data, contacts_data} = this.props;
-        let contacts = contacts_data['items'];
         let address_books = address_books_data['items'];
-        let contacts_list = contacts.map(function (contact) {
-            return {
-                value: contact['phone_number'],
-                label: contact['phone_number'] + ' ' + contact['full_name'],
-            }
-        });
-        let address_books_list  = address_books.map(function (book) {
+        let address_books_list = address_books.map(function (book) {
             return {
                 value: book['id'],
                 label: book['book_name'] + '(address book)',
             }
         });
-        let recipients_list = address_books_list.concat(contacts_list);
+        let recipients_list = address_books_list.concat(this.state.contacts_match);
         let organization = organization_data['items'][0] || {};
         if (this.state.loading) {
             return <AppLoadingIndicator/>;
-        } else if (organization_data['isFetching']) {
+        } else if (organization_data['isFetching'] ||
+            contacts_data['isFetching'] ||
+            address_books_data['isFetching']) {
             return <ComponentLoadingIndicator/>;
         }
         let send_message_button = <Button variant="contained" color="primary" type="submit">
@@ -191,12 +223,14 @@ class Home extends Component {
                                     <Select
                                         id="value"
                                         label="Recipients"
-                                        options={recipients_list}
+                                        defaultOptions={recipients_list}
                                         value={this.state.recipients_array}
                                         onChange={(value) => this.handleRecipientsChange(value)}
+                                        isAsync
                                         isClearable
                                         isCreatable
                                         isMulti
+                                        loadOptions={promiseOptions}
                                     />
                                 </Fragment>
                             </Grid>

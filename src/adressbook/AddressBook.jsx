@@ -5,11 +5,14 @@ import {fetchDataIfNeeded, invalidateData, setSessionVariable} from "../actions/
 import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import {extractResponseError, getUrlData} from "../functions/componentActions";
+import {addressBookToPayload, extractResponseError, getUrlData} from "../functions/componentActions";
 import {postAPIRequest} from "../functions/APIRequests";
 import FormFeedbackMessage from "../components/FormFeedbackMessage";
 import Select from "@appgeist/react-select-material-ui";
-import {TextField} from "@material-ui/core";
+import {Fab, Grid, TextField, Box} from "@material-ui/core";
+import {ImportContacts} from "@material-ui/icons";
+import FormModal from "../components/FormModal";
+import FormUploadContacts from "./UploadContacts";
 
 class AddressBook extends Component {
     constructor(props) {
@@ -17,7 +20,8 @@ class AddressBook extends Component {
         this.state = {
             message: false,
             message_variant: 'info',
-            message_text: null
+            message_text: null,
+            upload_dialogue_open: false
         }
     }
 
@@ -34,26 +38,20 @@ class AddressBook extends Component {
     };
 
     handleCreateContact = (contact_data) => {
-        let send_message_url = serverBaseUrl() + '/messenger/contacts/';
+        let contacts_url = serverBaseUrl() + '/messenger/contacts/';
         let selected_address_books = this.state.selected_address_book;
         let {first_name, middle_name, last_name, phone_number} = this.state;
         contact_data['first_name'] = first_name;
         contact_data['middle_name'] = middle_name;
         contact_data['last_name'] = last_name;
         contact_data['phone_number'] = phone_number;
-        let book = [];
-        let book_name = [];
-        selected_address_books.forEach(function (selected_address_book) {
-            if (selected_address_book['__isNew__']) {
-                book_name.push(selected_address_book['value']);
-            } else {
-                book.push(selected_address_book['value']);
-            }
-        });
+        let book_array = addressBookToPayload(selected_address_books);
+        let book = book_array[0];
+        let book_name = book_array[1];
         contact_data['book_name'] = book_name.join(',');
         contact_data['book'] = book.join(',');
         postAPIRequest(
-            send_message_url,
+            contacts_url,
             () => {
                 this.setState({
                     message: true,
@@ -128,6 +126,18 @@ class AddressBook extends Component {
                           })}/>
     }
 
+    handleCloseDialogue = (form) => {
+        this.setState({
+            [form]: false
+        })
+    };
+
+    handleOpenDialogue = (form) => {
+        this.setState({
+            [form]: true
+        })
+    };
+
     render() {
         const {contacts_data, address_books_data} = this.props;
         let contacts = contacts_data['items'];
@@ -171,49 +181,72 @@ class AddressBook extends Component {
         return (
             <div>
                 {message}
-                <MaterialTable
-                    editable={{
-                        isEditable: rowData => rowData.name === "a", // only name(a) rows would be editable
-                        isDeletable: rowData => rowData.name === "b", // only name(a) rows would be deletable
-                        onRowAdd: newData =>
-                            new Promise((resolve, reject) => {
-                                setTimeout(() => {
-                                    {
-                                        this.handleCreateContact(newData);
-                                    }
-                                    resolve();
-                                }, 1000);
-                            }),
-                        onRowUpdate: (newData, oldData) =>
-                            new Promise((resolve, reject) => {
-                                setTimeout(() => {
-                                    {
-                                        /* const data = this.state.data;
-                                        const index = data.indexOf(oldData);
-                                        data[index] = newData;
-                                        this.setState({ data }, () => resolve()); */
-                                    }
-                                    resolve();
-                                }, 1000);
-                            }),
-                        onRowDelete: oldData =>
-                            new Promise((resolve, reject) => {
-                                setTimeout(() => {
-                                    {
-                                        /* let data = this.state.data;
-                                        const index = data.indexOf(oldData);
-                                        data.splice(index, 1);
-                                        this.setState({ data }, () => resolve()); */
-                                    }
-                                    resolve();
-                                }, 1000);
-                            })
-                    }}
-                    isLoading={contacts_data['isFetching']}
-                    title="Contacts"
-                    columns={contacts_columns}
-                    data={contacts}
-                />
+                <Box>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <Fab variant="extended" color="default" size="medium"
+                                 onClick={() => this.handleOpenDialogue('upload_dialogue_open')}>
+                                <ImportContacts color="primary"/>
+                                upload contacts
+                            </Fab>
+                        </Grid>
+                    </Grid>
+                </Box>
+                <Box mt={2}>
+                    <MaterialTable
+                        editable={{
+                            isEditable: rowData => rowData.name === "a", // only name(a) rows would be editable
+                            isDeletable: rowData => rowData.name === "b", // only name(a) rows would be deletable
+                            onRowAdd: newData =>
+                                new Promise((resolve, reject) => {
+                                    setTimeout(() => {
+                                        {
+                                            this.handleCreateContact(newData);
+                                        }
+                                        resolve();
+                                    }, 1000);
+                                }),
+                            onRowUpdate: (newData, oldData) =>
+                                new Promise((resolve, reject) => {
+                                    setTimeout(() => {
+                                        {
+                                            /* const data = this.state.data;
+                                            const index = data.indexOf(oldData);
+                                            data[index] = newData;
+                                            this.setState({ data }, () => resolve()); */
+                                        }
+                                        resolve();
+                                    }, 1000);
+                                }),
+                            onRowDelete: oldData =>
+                                new Promise((resolve, reject) => {
+                                    setTimeout(() => {
+                                        {
+                                            /* let data = this.state.data;
+                                            const index = data.indexOf(oldData);
+                                            data.splice(index, 1);
+                                            this.setState({ data }, () => resolve()); */
+                                        }
+                                        resolve();
+                                    }, 1000);
+                                })
+                        }}
+                        isLoading={contacts_data['isFetching']}
+                        title="Contacts"
+                        columns={contacts_columns}
+                        data={contacts}
+                    />
+                </Box>
+                <FormModal
+                    handleClickOpen={() => this.handleOpenDialogue('upload_dialogue_open')}
+                    handleClose={() => this.handleCloseDialogue('upload_dialogue_open')}
+                    open={this.state.upload_dialogue_open}
+                    title="Upload contacts"
+                >
+                    <FormUploadContacts
+                        handleClose={() => this.handleCloseDialogue('upload_dialogue_open')}
+                    />
+                </FormModal>
             </div>
         );
     }
