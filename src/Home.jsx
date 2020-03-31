@@ -18,11 +18,12 @@ import ComponentLoadingIndicator from "./components/ComponentLoadingIndicator";
 import FormFeedbackMessage from "./components/FormFeedbackMessage";
 import FormActivityIndicator from "./components/FormActivityIndicator";
 import $ from "jquery";
-import {postAPIRequest} from "./functions/APIRequests";
+import {postAPIRequest, getAPIRequest} from "./functions/APIRequests";
 import {Payment} from '@material-ui/icons';
 import FormModal from "./components/FormModal";
 import FormTopUp from "./units/FormTopUp";
 import Select from "@appgeist/react-select-material-ui";
+import _ from "lodash";
 
 class Home extends Component {
     constructor(props) {
@@ -41,7 +42,6 @@ class Home extends Component {
 
     componentDidMount() {
         this.fetchUrlData('organization_url', '/registration/organizations/');
-        this.fetchUrlData('contacts_url', '/messenger/contacts/');
         this.fetchUrlData('address_books_url', '/messenger/address_books/');
     }
 
@@ -111,35 +111,37 @@ class Home extends Component {
         })
     };
 
-    handleRecipientsSearch = (contact_search) => {
-        console.log(contact_search);
-        if (contact_search) {
-            const {contacts_data} = this.props;
-            let contacts = contacts_data['items'];
-            let contacts_match = [];
-            contacts.forEach((contact) => {
-                let search = contact_search.toLowerCase();
-                let values = Object.values(contact);
-                let flag = false
-                values.forEach((val) => {
-                    if (val) {
-                        val = val.toString();
-                        if (val.toLowerCase().indexOf(search) > -1) {
-                            flag = true;
-                            return;
-                        }
-                    }
-                });
-                if (flag) {
+    handleRecipientsSearch = (contact_search, callback) => {
+        let search_contacts_url = serverBaseUrl() + `/messenger/contacts/?search=${contact_search}`;
+        getAPIRequest(
+            search_contacts_url,
+            (results) => {
+                let contacts_match = [];
+                results.forEach((contact) => {
                     contacts_match.push({
                         value: contact['phone_number'],
                         label: contact['phone_number'] + ' ' + contact['full_name'],
                     });
-                }
-            });
-            return contacts_match;
-        }
+                });
+                callback(contacts_match);
+            },
+            (results) => {
+                let alert_message = extractResponseError(results);
+                this.setState({
+                    message: true,
+                    message_text: alert_message,
+                    message_variant: 'error',
+                    activity: false
+                });
+            },
+            {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.token
+            }
+        )
     }
+
+    debouncedLoadOptions = _.debounce(this.handleRecipientsSearch, 500);
 
     handleRecipientsChange = (recipients_array) => {
         let previous_recipients = this.state.recipients_array || [];
@@ -174,10 +176,10 @@ class Home extends Component {
         const promiseOptions = inputValue =>
             new Promise(resolve => {
                 setTimeout(() => {
-                    resolve(this.handleRecipientsSearch(inputValue));
+                    this.debouncedLoadOptions(inputValue, resolve);
                 }, 1000);
             });
-        const {organization_data, address_books_data, contacts_data} = this.props;
+        const {organization_data, address_books_data} = this.props;
         let address_books = address_books_data['items'];
         let address_books_list = address_books.map(function (book) {
             return {
@@ -189,9 +191,7 @@ class Home extends Component {
         let organization = organization_data['items'][0] || {};
         if (this.state.loading) {
             return <AppLoadingIndicator/>;
-        } else if (organization_data['isFetching'] ||
-            contacts_data['isFetching'] ||
-            address_books_data['isFetching']) {
+        } else if (organization_data['isFetching'] || address_books_data['isFetching']) {
             return <ComponentLoadingIndicator/>;
         }
         let send_message_button = <Button variant="contained" color="primary" type="submit">
@@ -289,7 +289,6 @@ Home.propTypes = {
     sessionVariables: PropTypes.object.isRequired,
     dispatch: PropTypes.func.isRequired,
     organization_data: PropTypes.object.isRequired,
-    contacts_data: PropTypes.object.isRequired,
     address_books_data: PropTypes.object.isRequired
 };
 
@@ -301,13 +300,11 @@ function mapStateToProps(state) {
 
     const {sessionVariables, dataByUrl} = state;
     const organization_data = retrieveUrlData('organization_url', dataByUrl);
-    const contacts_data = retrieveUrlData('contacts_url', dataByUrl);
     const address_books_data = retrieveUrlData('address_books_url', dataByUrl);
 
     return {
         sessionVariables,
         organization_data,
-        contacts_data,
         address_books_data
     }
 }

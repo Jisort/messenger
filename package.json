@@ -17,6 +17,7 @@
     "countries-list": "^2.5.4",
     "cross-fetch": "^3.0.4",
     "jquery": "^3.4.1",
+    "lodash": "^4.17.15",
     "material-table": "^1.57.2",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",
