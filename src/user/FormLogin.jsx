@@ -1,5 +1,10 @@
 import React, {Component} from "react";
-import {Container, Card, CardContent, Button, Grid, Paper, Box, FormControl, TextField, Link} from "@material-ui/core";
+import {
+    Container, Card, CardContent,
+    Button, Grid, Paper,
+    Box, FormControl, TextField,
+    Link, Typography
+} from "@material-ui/core";
 import FormActivityIndicator from "../components/FormActivityIndicator";
 import {withRouter} from "react-router-dom";
 import {postAPIRequest, getAPIRequest} from "../functions/APIRequests";
@@ -269,6 +274,15 @@ class FormLogin extends Component {
                                     <Link href="https://my.jisort.com/reset_password/" target="_blank">
                                         reset password
                                     </Link>
+                                </Box>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <Box display="flex" justifyContent="center">
+                                    <Typography variant="subtitle2">
+                                        send bulk sms at KES 0.75 per sms
+                                    </Typography>
                                 </Box>
                             </FormControl>
                         </Grid>
