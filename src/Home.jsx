@@ -37,7 +37,9 @@ class Home extends Component {
             top_up_dialogue_open: false,
             recipients_array: [],
             contacts_match: [],
-            component_loading: false
+            component_loading: false,
+            no_of_characters: 0,
+            text_message: ''
         };
     }
 
@@ -75,7 +77,8 @@ class Home extends Component {
                     message: true,
                     message_text: 'Message sent successfully',
                     message_variant: 'success',
-                    activity: false
+                    activity: false,
+                    text_message: ''
                 });
                 $("form#send-message-form")[0].reset();
                 const {sessionVariables, dispatch} = this.props;
@@ -140,6 +143,14 @@ class Home extends Component {
                 'Authorization': 'Bearer ' + localStorage.token
             }
         )
+    }
+
+    handleCountCharacters = (message) => {
+        let no_of_characters = message.length;
+        this.setState({
+            no_of_characters: no_of_characters,
+            text_message: message
+        });
     }
 
     debouncedLoadOptions = _.debounce(this.handleRecipientsSearch, 500);
@@ -277,6 +288,8 @@ class Home extends Component {
                                     rows="10"
                                     variant="outlined"
                                     required={true}
+                                    defaultValue={this.state.text_message}
+                                    onChange={(e) => this.handleCountCharacters(e.target.value)}
                                 />
                             </Grid>
                         </Grid>
@@ -289,6 +302,11 @@ class Home extends Component {
                         </Grid>
                     </form>
                     <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <Typography variant="body1" display="block" gutterBottom>
+                                {this.state.no_of_characters} characters
+                            </Typography>
+                        </Grid>
                         <Grid item xs={12}>
                             <Typography variant="body1" display="block" gutterBottom
                                         style={{fontWeight: 'bold'}}>

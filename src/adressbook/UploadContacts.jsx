@@ -41,6 +41,11 @@ class FormUploadContacts extends Component {
         dispatch(fetchDataIfNeeded(url));
     };
 
+    handleRefreshContacts = () => {
+        console.log(this.props.tableRef);
+        this.props.tableRef.current && this.props.tableRef.current.onQueryChange();
+    }
+
     handleContactsUploadSubmit(e) {
         e.preventDefault();
         this.setState({
@@ -70,6 +75,7 @@ class FormUploadContacts extends Component {
                 dispatch(invalidateData(contacts_url));
                 dispatch(fetchDataIfNeeded(contacts_url));
                 $("form#upload-contacts-form")[0].reset();
+                this.handleRefreshContacts();
             },
             (results) => {
                 let alert_message = extractResponseError(results);
@@ -83,6 +89,7 @@ class FormUploadContacts extends Component {
                 let address_books_url = sessionVariables['address_books_url'] || '';
                 dispatch(invalidateData(address_books_url));
                 dispatch(fetchDataIfNeeded(address_books_url));
+                this.handleRefreshContacts();
             },
             formData,
             {
