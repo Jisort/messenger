@@ -6,13 +6,14 @@ import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {addressBookToPayload, extractResponseError, getUrlData} from "../functions/componentActions";
-import {postAPIRequest} from "../functions/APIRequests";
+import {getAPIRequest, postAPIRequest} from "../functions/APIRequests";
 import FormFeedbackMessage from "../components/FormFeedbackMessage";
 import Select from "@appgeist/react-select-material-ui";
 import {Fab, Grid, TextField, Box} from "@material-ui/core";
 import {ImportContacts} from "@material-ui/icons";
 import FormModal from "../components/FormModal";
 import FormUploadContacts from "./UploadContacts";
+import ActionPrompt from "../components/ActionPrompt";
 
 class AddressBook extends Component {
     constructor(props) {
@@ -21,12 +22,15 @@ class AddressBook extends Component {
             message: false,
             message_variant: 'info',
             message_text: null,
-            upload_dialogue_open: false
+            upload_dialogue_open: false,
+            delete_prompt_open: false,
+            contacts_to_delete: [],
+            activity: false
         }
+        this.tableRef = React.createRef();
     }
 
     componentDidMount() {
-        this.fetchUrlData('contacts_url', '/messenger/contacts/');
         this.fetchUrlData('address_books_url', '/messenger/address_books/');
     }
 
@@ -37,35 +41,13 @@ class AddressBook extends Component {
         dispatch(fetchDataIfNeeded(url));
     };
 
-    handleCreateContact = (contact_data) => {
-        let contacts_url = serverBaseUrl() + '/messenger/contacts/';
-        let selected_address_books = this.state.selected_address_book;
-        let {first_name, middle_name, last_name, phone_number} = this.state;
-        contact_data['first_name'] = first_name;
-        contact_data['middle_name'] = middle_name;
-        contact_data['last_name'] = last_name;
-        contact_data['phone_number'] = phone_number;
-        let book_array = addressBookToPayload(selected_address_books);
-        let book = book_array[0];
-        let book_name = book_array[1];
-        contact_data['book_name'] = book_name.join(',');
-        contact_data['book'] = book.join(',');
-        postAPIRequest(
+    handleGetContacts(resolve, page, page_size, search) {
+        let query = `paginate=true&page=${page}&page_size=${page_size}&search=${search}`;
+        let contacts_url = `${serverBaseUrl()}/messenger/contacts/?${query}`;
+        getAPIRequest(
             contacts_url,
-            () => {
-                this.setState({
-                    message: true,
-                    message_text: 'Contact created successfully',
-                    message_variant: 'success',
-                    activity: false
-                });
-                const {sessionVariables, dispatch} = this.props;
-                let contacts_url = sessionVariables['contacts_url'] || '';
-                let address_books_url = sessionVariables['address_books_url'] || '';
-                dispatch(invalidateData(contacts_url));
-                dispatch(fetchDataIfNeeded(contacts_url));
-                dispatch(invalidateData(address_books_url));
-                dispatch(fetchDataIfNeeded(address_books_url));
+            (results) => {
+                resolve(results);
             },
             (results) => {
                 let alert_message = extractResponseError(results);
@@ -75,12 +57,7 @@ class AddressBook extends Component {
                     message_variant: 'error',
                     activity: false
                 });
-                const {sessionVariables, dispatch} = this.props;
-                let address_books_url = sessionVariables['address_books_url'] || '';
-                dispatch(invalidateData(address_books_url));
-                dispatch(fetchDataIfNeeded(address_books_url));
             },
-            contact_data,
             {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + localStorage.token
@@ -88,7 +65,104 @@ class AddressBook extends Component {
         )
     }
 
-    handleAddressBookChange  = (book_object) => {
+    handleGetContactData = (contact_data) => {
+        let selected_address_books = this.state.selected_address_book || [];
+        let first_name = this.state.first_name || contact_data.first_name;
+        let middle_name = this.state.middle_name || contact_data.middle_name;
+        let last_name = this.state.last_name || contact_data.last_name;
+        let phone_number = this.state.phone_number || contact_data.phone_number;
+        contact_data['first_name'] = first_name;
+        contact_data['middle_name'] = middle_name;
+        contact_data['last_name'] = last_name;
+        contact_data['phone_number'] = phone_number;
+        let book_array = addressBookToPayload(selected_address_books);
+        let book = book_array[0];
+        let book_name = book_array[1];
+        contact_data['book_name'] = book_name.join(',');
+        contact_data['book'] = book.join(',');
+        return contact_data;
+    }
+
+    handleSubmitContactData = (contact_data, contacts_url, method, action) => {
+        postAPIRequest(
+            contacts_url,
+            () => {
+                this.setState({
+                    message: true,
+                    message_text: `Contact ${action} successfully`,
+                    message_variant: 'success',
+                    activity: false,
+                    delete_prompt_open: false
+                });
+                const {sessionVariables, dispatch} = this.props;
+                let contacts_url = sessionVariables['contacts_url'] || '';
+                let address_books_url = sessionVariables['address_books_url'] || '';
+                dispatch(invalidateData(contacts_url));
+                dispatch(fetchDataIfNeeded(contacts_url));
+                dispatch(invalidateData(address_books_url));
+                dispatch(fetchDataIfNeeded(address_books_url));
+                this.handleRefreshContacts();
+            },
+            (results) => {
+                let alert_message = extractResponseError(results);
+                this.setState({
+                    message: true,
+                    message_text: alert_message,
+                    message_variant: 'error',
+                    activity: false,
+                    delete_prompt_open: false
+                });
+                const {sessionVariables, dispatch} = this.props;
+                let address_books_url = sessionVariables['address_books_url'] || '';
+                dispatch(invalidateData(address_books_url));
+                dispatch(fetchDataIfNeeded(address_books_url));
+                this.handleRefreshContacts();
+            },
+            contact_data,
+            {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.token
+            },
+            method
+        )
+    }
+
+    handleContactUpdate = (contact_data) => {
+        contact_data = this.handleGetContactData(contact_data);
+        let contacts_url = `${serverBaseUrl()}/messenger/contacts/${contact_data.id}/`;
+        this.handleSubmitContactData(contact_data, contacts_url, 'PUT', 'updated');
+    }
+
+    handleCreateContact = (contact_data) => {
+        let contacts_url = serverBaseUrl() + '/messenger/contacts/';
+        contact_data = this.handleGetContactData(contact_data);
+        this.handleSubmitContactData(contact_data, contacts_url, 'POST', 'created');
+    }
+
+    handleDeleteContacts = (contacts_to_delete = null) => {
+        this.setState({
+            activity: true
+        });
+        if (!contacts_to_delete) {
+            contacts_to_delete = this.state.contacts_to_delete;
+        }
+        let contacts_ids = [];
+        let contacts_url = serverBaseUrl() + '/messenger/contacts/';
+        contacts_to_delete.forEach(function (contact) {
+            contacts_ids.push(contact['id']);
+        });
+        let contact_data = {
+            delete: true,
+            contacts_ids: contacts_ids.join(',')
+        };
+        this.handleSubmitContactData(contact_data, contacts_url, 'POST', 'deleted');
+    };
+
+    handleRefreshContacts = () => {
+        this.tableRef.current && this.tableRef.current.onQueryChange();
+    }
+
+    handleAddressBookChange = (book_object) => {
         this.setState({
             selected_address_book: book_object,
         });
@@ -96,11 +170,25 @@ class AddressBook extends Component {
 
     editAddressBookComponent = (field) => {
         const {address_books_data} = this.props;
+        let row_data = field.rowData || {};
+        let address_book_list = row_data['address_book_list'] || [];
+        let selected_address_book = this.state.selected_address_book;
         let address_books = address_books_data['items'];
+        if (!selected_address_book) {
+            selected_address_book = [];
+            address_books.forEach(function (book) {
+                if (address_book_list.includes(book['id'])) {
+                    selected_address_book.push({
+                        value: book['id'],
+                        label: book['book_name']
+                    });
+                }
+            });
+        }
         let address_books_list = address_books.map(function (book) {
             return {
                 value: book['id'],
-                label: book['book_name'],
+                label: book['book_name']
             }
         });
         return <Fragment>
@@ -108,7 +196,7 @@ class AddressBook extends Component {
                 id="value"
                 label="Address book"
                 options={address_books_list}
-                value={this.state.selected_address_book}
+                value={selected_address_book}
                 onChange={(value) => this.handleAddressBookChange(value)}
                 isClearable
                 isCreatable
@@ -121,6 +209,7 @@ class AddressBook extends Component {
         let column_def = field.columnDef;
         return <TextField type="text" label={column_def.title} name={column_def.field}
                           variant="outlined"
+                          defaultValue={field.value}
                           onChange={event => this.setState({
                               [column_def.field]: event.target.value
                           })}/>
@@ -139,8 +228,7 @@ class AddressBook extends Component {
     };
 
     render() {
-        const {contacts_data, address_books_data} = this.props;
-        let contacts = contacts_data['items'];
+        const {address_books_data} = this.props;
         let address_books = address_books_data['items'];
         let address_book_lookup = {}
         address_books.forEach(function (book) {
@@ -192,49 +280,61 @@ class AddressBook extends Component {
                         </Grid>
                     </Grid>
                 </Box>
-                <Box mt={2}>
+                <Box mt={2} mb={8}>
                     <MaterialTable
+                        tableRef={this.tableRef}
+                        options={{
+                            selection: true,
+                            pageSizeOptions: [5, 10, 20, 50, 100, 200, 500, 1000],
+                            exportButton: true
+                        }}
+                        actions={[
+                            {
+                                tooltip: 'Remove all selected contacts',
+                                icon: 'delete',
+                                onClick: (evt, data) => this.setState({
+                                    delete_prompt_open: true,
+                                    contacts_to_delete: data
+                                })
+                            }, {
+                                icon: 'refresh',
+                                tooltip: 'Refresh Data',
+                                isFreeAction: true,
+                                onClick: () => this.handleRefreshContacts(),
+                            }
+                        ]}
                         editable={{
-                            isEditable: rowData => rowData.name === "a", // only name(a) rows would be editable
-                            isDeletable: rowData => rowData.name === "b", // only name(a) rows would be deletable
+                            isEditable: rowData => rowData.id > 0,
+                            isDeletable: rowData => rowData.id > 0,
                             onRowAdd: newData =>
                                 new Promise((resolve, reject) => {
                                     setTimeout(() => {
-                                        {
-                                            this.handleCreateContact(newData);
-                                        }
+                                        this.handleCreateContact(newData);
                                         resolve();
                                     }, 1000);
                                 }),
                             onRowUpdate: (newData, oldData) =>
                                 new Promise((resolve, reject) => {
                                     setTimeout(() => {
-                                        {
-                                            /* const data = this.state.data;
-                                            const index = data.indexOf(oldData);
-                                            data[index] = newData;
-                                            this.setState({ data }, () => resolve()); */
-                                        }
+                                        this.handleContactUpdate(newData);
                                         resolve();
                                     }, 1000);
                                 }),
                             onRowDelete: oldData =>
                                 new Promise((resolve, reject) => {
                                     setTimeout(() => {
-                                        {
-                                            /* let data = this.state.data;
-                                            const index = data.indexOf(oldData);
-                                            data.splice(index, 1);
-                                            this.setState({ data }, () => resolve()); */
-                                        }
+                                        this.handleDeleteContacts([oldData])
                                         resolve();
                                     }, 1000);
                                 })
                         }}
-                        isLoading={contacts_data['isFetching']}
                         title="Contacts"
                         columns={contacts_columns}
-                        data={contacts}
+                        data={query =>
+                            new Promise((resolve, reject) => {
+                                this.handleGetContacts(resolve, query.page, query.pageSize, query.search);
+                            })
+                        }
                     />
                 </Box>
                 <FormModal
@@ -245,8 +345,17 @@ class AddressBook extends Component {
                 >
                     <FormUploadContacts
                         handleClose={() => this.handleCloseDialogue('upload_dialogue_open')}
+                        tableRef={this.tableRef}
                     />
                 </FormModal>
+                <ActionPrompt
+                    open={this.state.delete_prompt_open}
+                    title={`Delete ${this.state.contacts_to_delete.length} contacts?`}
+                    content="Deleted contacts will be permanently removed from your account"
+                    handleAgree={() => this.handleDeleteContacts()}
+                    handleDisagree={() => this.handleCloseDialogue('delete_prompt_open')}
+                    activity={this.state.activity}
+                />
             </div>
         );
     }
@@ -255,7 +364,6 @@ class AddressBook extends Component {
 AddressBook.propTypes = {
     sessionVariables: PropTypes.object.isRequired,
     dispatch: PropTypes.func.isRequired,
-    contacts_data: PropTypes.object.isRequired,
     address_books_data: PropTypes.object.isRequired
 };
 
@@ -266,12 +374,10 @@ function mapStateToProps(state) {
     }
 
     const {sessionVariables, dataByUrl} = state;
-    const contacts_data = retrieveUrlData('contacts_url', dataByUrl);
     const address_books_data = retrieveUrlData('address_books_url', dataByUrl);
 
     return {
         sessionVariables,
-        contacts_data,
         address_books_data
     }
 }
