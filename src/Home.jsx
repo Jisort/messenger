@@ -304,6 +304,9 @@ class Home extends Component {
                     <Grid container spacing={3}>
                         <Grid item xs={12}>
                             <Typography variant="body1" display="block" gutterBottom>
+                                {this.state.recipients_array.length} recipients
+                            </Typography>
+                            <Typography variant="body1" display="block" gutterBottom>
                                 {this.state.no_of_characters} characters
                             </Typography>
                         </Grid>
