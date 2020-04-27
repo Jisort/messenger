@@ -246,7 +246,7 @@ class CustomReports extends Component {
                                     [date_time_from_name]: date
                                 });
                             }}
-                            format="YYYY-MM-DD HH:MM"
+                            format="MMMM Do YYYY hh:mm a"
                             fullWidth={true}
                         />
                     </Grid>,
@@ -259,7 +259,7 @@ class CustomReports extends Component {
                                     [date_time_to_name]: date
                                 });
                             }}
-                            format="YYYY-MM-DD HH:MM"
+                            format="MMMM Do YYYY hh:mm a"
                             fullWidth={true}
                         />
                     </Grid>
