@@ -230,6 +230,13 @@ class Home extends Component {
         });
         let recipients_list = address_books_list.concat(this.state.contacts_match);
         let organization = organization_data['items'][0] || {};
+        let sender_id_provider = organization['sender_id_provider'];
+        let sms_size = 150;
+        if (sender_id_provider === 'infobip') {
+            sms_size = 140;
+        }
+        let sms_pages = Math.ceil(this.state.no_of_characters / sms_size);
+        let total_sms_cost = sms_pages * organization['sms_price'] * this.state.recipients_array.length;
         if (this.state.loading) {
             return <AppLoadingIndicator/>;
         } else if (organization_data['isFetching'] ||
@@ -304,10 +311,13 @@ class Home extends Component {
                     <Grid container spacing={3}>
                         <Grid item xs={12}>
                             <Typography variant="body1" display="block" gutterBottom>
-                                {this.state.recipients_array.length} recipients
+                                {this.state.recipients_array.length} recipient(s)
                             </Typography>
                             <Typography variant="body1" display="block" gutterBottom>
-                                {this.state.no_of_characters} characters
+                                {this.state.no_of_characters} character(s)
+                            </Typography>
+                            <Typography variant="body1" display="block" gutterBottom>
+                                total cost: {total_sms_cost}
                             </Typography>
                         </Grid>
                         <Grid item xs={12}>
