@@ -262,9 +262,10 @@ class FormLogin extends Component {
                         <Grid item xs={12}>
                             <FormControl fullWidth>
                                 <Box display="flex" justifyContent="center">
-                                    <Link href="#" onClick={() => pushHistory(this.props, '/signUp')}>
+                                    <Button variant="outlined" color="primary"
+                                            onClick={() => pushHistory(this.props, '/signUp')}>
                                         create account
-                                    </Link>
+                                    </Button>
                                 </Box>
                             </FormControl>
                         </Grid>
@@ -283,6 +284,15 @@ class FormLogin extends Component {
                                     <Typography variant="subtitle2">
                                         send bulk sms at KES 0.75 per sms
                                     </Typography>
+                                </Box>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <Box display="flex" justifyContent="center">
+                                    <Link href="https://raw.githubusercontent.com/Jisort/messenger/master/api_documentation.pdf" target="_blank">
+                                        download API documentation
+                                    </Link>
                                 </Box>
                             </FormControl>
                         </Grid>
