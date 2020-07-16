@@ -15,7 +15,7 @@ import {
 } from "../functions/componentActions";
 import {fetchDataIfNeeded, invalidateData, setSessionVariable} from "../actions/actions";
 import Select from "@appgeist/react-select-material-ui";
-
+import ContactsTemplate from "./contacts.xlsx";
 
 class FormUploadContacts extends Component {
     constructor(props) {
@@ -42,7 +42,6 @@ class FormUploadContacts extends Component {
     };
 
     handleRefreshContacts = () => {
-        console.log(this.props.tableRef);
         this.props.tableRef.current && this.props.tableRef.current.onQueryChange();
     }
 
@@ -164,6 +163,13 @@ class FormUploadContacts extends Component {
                                         </Button>
                                         <Link href="#">
                                             {this.state.contacts_file_name}
+                                        </Link>
+                                    </Grid>
+                                </Grid>
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12}>
+                                        <Link href={ContactsTemplate}>
+                                            Download template
                                         </Link>
                                     </Grid>
                                 </Grid>
