@@ -24,6 +24,7 @@ import FormModal from "./components/FormModal";
 import FormTopUp from "./units/FormTopUp";
 import Select from "@appgeist/react-select-material-ui";
 import _ from "lodash";
+import {Checkbox, FormControlLabel} from '@material-ui/core';
 
 class Home extends Component {
     constructor(props) {
@@ -39,7 +40,8 @@ class Home extends Component {
             contacts_match: [],
             component_loading: false,
             no_of_characters: 0,
-            text_message: ''
+            text_message: '',
+            skip_duplicates: false
         };
     }
 
@@ -68,6 +70,7 @@ class Home extends Component {
             recipients.push(recipient['value']);
         });
         payload['recipients'] = recipients.join(',');
+        payload['skip_duplicates'] = this.state.skip_duplicates;
         payload = formDataToPayload(formData, payload);
         let send_message_url = serverBaseUrl() + '/messenger/outbox/';
         postAPIRequest(
@@ -78,7 +81,8 @@ class Home extends Component {
                     message_text: 'Message sent successfully',
                     message_variant: 'success',
                     activity: false,
-                    text_message: ''
+                    text_message: '',
+                    skip_duplicates: false
                 });
                 $("form#send-message-form")[0].reset();
                 const {sessionVariables, dispatch} = this.props;
@@ -297,6 +301,16 @@ class Home extends Component {
                                     required={true}
                                     defaultValue={this.state.text_message}
                                     onChange={(e) => this.handleCountCharacters(e.target.value)}
+                                />
+                            </Grid>
+                        </Grid>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                                <FormControlLabel
+                                    control={<Checkbox color="primary" onChange={
+                                        (e) => this.setState({skip_duplicates: e.target.checked})
+                                    }/>}
+                                    label="Skip duplicate messages (last 48hrs)"
                                 />
                             </Grid>
                         </Grid>
