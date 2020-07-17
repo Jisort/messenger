@@ -41,7 +41,8 @@ class Home extends Component {
             component_loading: false,
             no_of_characters: 0,
             text_message: '',
-            skip_duplicates: false
+            skip_duplicates: false,
+            duplicate_hours_disabled: true
         };
     }
 
@@ -82,7 +83,8 @@ class Home extends Component {
                     message_variant: 'success',
                     activity: false,
                     text_message: '',
-                    skip_duplicates: false
+                    skip_duplicates: false,
+                    duplicate_hours_disabled: true
                 });
                 $("form#send-message-form")[0].reset();
                 const {sessionVariables, dispatch} = this.props;
@@ -308,9 +310,32 @@ class Home extends Component {
                             <Grid item xs={12}>
                                 <FormControlLabel
                                     control={<Checkbox color="primary" onChange={
-                                        (e) => this.setState({skip_duplicates: e.target.checked})
+                                        (e) => this.setState({
+                                            skip_duplicates: e.target.checked,
+                                            duplicate_hours_disabled: !e.target.checked
+                                        })
                                     }/>}
-                                    label="Skip duplicate messages (last 48hrs)"
+                                    label="Skip duplicate messages"
+                                />
+                            </Grid>
+                        </Grid>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                                <TextField
+                                    label="Hours"
+                                    required={true}
+                                    disabled={this.state.duplicate_hours_disabled}
+                                    type="number"
+                                    variant="outlined"
+                                    name="duplicate_hours"
+                                    defaultValue={48}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    inputProps={{
+                                        step: 1,
+                                        min: 1
+                                    }}
                                 />
                             </Grid>
                         </Grid>
