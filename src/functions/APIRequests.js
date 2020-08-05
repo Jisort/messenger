@@ -1,6 +1,7 @@
 module.exports = {
     postAPIRequest: function (url, successCallback, errorCallback, payload, headers, method = 'POST') {
         fetch(url, {
+                credentials: 'include',
                 method: method,
                 body: JSON.stringify(payload),
                 headers: headers,
@@ -27,6 +28,7 @@ module.exports = {
 
     postFormAPIRequest: function (url, successCallback, errorCallback, payload, headers, method = 'POST') {
         fetch(url, {
+                credentials: 'include',
                 method: method,
                 body: payload,
                 headers: headers,
