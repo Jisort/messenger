@@ -23,6 +23,9 @@ import moment from "moment";
 import ReactToPrint from 'react-to-print';
 import {Print} from '@material-ui/icons';
 import $ from "jquery";
+import TableExport from "tableexport";
+
+require("tableexport/dist/css/tableexport.min.css");
 
 class CustomReports extends Component {
     constructor(props) {
@@ -34,12 +37,33 @@ class CustomReports extends Component {
             message_text: null,
             selected_report: null,
             report_data: [],
-            report_inputs: []
+            report_inputs: [],
+            tableExport: null
         }
     }
 
     componentDidMount() {
         this.fetchUrlData('custom_reports', '/report_builder/api/report/');
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        TableExport(document.getElementsByClassName("table-export"),
+            {
+                headers: true,
+                footers: true,
+                formats: ["xlsx", "xls", "csv", "txt"],
+                filename: "messenger_report",
+                bootstrap: false,
+                exportButtons: true,
+                position: "top",
+                ignoreRows: null,
+                ignoreCols: null,
+                trimWhitespace: true,
+                RTL: false,
+                sheetname: "messenger_report"
+            });
+        TableExport.prototype.defaultButton = "MuiButtonBase-root MuiButton-root MuiButton-outlined" +
+            " MuiButton-outlinedPrimary";
     }
 
     fetchUrlData = (var_name, url) => {
@@ -57,12 +81,6 @@ class CustomReports extends Component {
         });
         this.setState({
             selected_report: selected_report
-        });
-    };
-
-    handleDateChange = date => {
-        this.setState({
-            selected_date: date
         });
     };
 
@@ -373,7 +391,8 @@ class CustomReports extends Component {
                 <Typography variant="h6" id="tableTitle">
                     {report_name}
                 </Typography>
-                <Table aria-label="simple table" stickyHeader ref={el => (this.componentRef = el)}>
+                <Table aria-label="simple table" stickyHeader ref={el => (this.componentRef = el)}
+                       className="table-export">
                     <TableHead>
                         <TableRow>
                             {thead}
