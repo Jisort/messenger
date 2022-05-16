@@ -15,7 +15,7 @@
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "countries-list": "^2.5.4",
-    "cross-fetch": "^3.0.4",
+    "cross-fetch": "^3.1.5",
     "jquery": "^3.4.1",
     "lodash": "^4.17.15",
     "material-table": "^1.57.2",
