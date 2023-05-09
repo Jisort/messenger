@@ -16,7 +16,7 @@
     "@testing-library/user-event": "^7.2.1",
     "countries-list": "^2.5.4",
     "cross-fetch": "^3.0.4",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "lodash": "^4.17.15",
     "material-table": "^1.57.2",
     "moment": "^2.24.0",
