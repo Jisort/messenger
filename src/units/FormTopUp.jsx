@@ -31,23 +31,19 @@ class FormTopUp extends Component {
         });
         let formData = new FormData($('form#top-up-form')[0]);
         let payload = {
-            sms_topup: true
+            sms_topup: true,
+            checkout: true
         };
         payload = formDataToPayload(formData, payload);
-        let top_up_url = serverBaseUrl() + '/messenger/outbox/';
+        let top_up_url = serverBaseUrl() + '/paymentsApi/confirm/';
         postAPIRequest(top_up_url,
             () => {
                 this.setState({
                     message: true,
-                    message_text: 'Top-up done successfully',
-                    message_variant: 'success',
+                    message_text: 'We are processing your request. This may take a few minutes.',
+                    message_variant: 'warning',
                     activity: false
                 });
-                const {sessionVariables, dispatch} = this.props;
-                let organization_url = sessionVariables['organization_url'] || '';
-                dispatch(invalidateData(organization_url));
-                dispatch(fetchDataIfNeeded(organization_url));
-                $("form#top-up-form")[0].reset();
             },
             (results) => {
                 let alert_message = extractResponseError(results);
@@ -93,14 +89,6 @@ class FormTopUp extends Component {
                         onSubmit={(e) => this.handleTopUpSubmit(e)}
                         id="top-up-form">
                         <DialogContent>
-                            <Grid container spacing={3}>
-                                <Grid item xs={12}>
-                                    <Typography variant="body1" display="block" gutterBottom
-                                                style={{fontWeight: 'bold'}}>
-                                        M-Pesa till number: 929230
-                                    </Typography>
-                                </Grid>
-                            </Grid>
                             <Grid container spacing={3}>
                                 <Grid item xs={12}>
                                     <TextField fullWidth label="Phone number"
